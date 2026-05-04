@@ -1,0 +1,18 @@
+
+services:
+  hawser:
+    image: ghcr.io/finsys/hawser:latest
+    container_name: hawser
+
+    ports:
+      - "your private ip vps address here, notice it should be in the same VPC with second server so they can see each other:2376:2376"
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/deploy:/opt/hawser-stacks
+
+    environment:
+      STACKS_DIR: /opt/hawser-stacks
+      TOKEN: secret
+
+    restart: unless-stopped
