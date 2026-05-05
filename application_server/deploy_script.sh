@@ -35,8 +35,6 @@ sudo chown -R deploy:deploy /home/deploy
 docker network create preview_deploy
 docker network create production_deploy
 docker network create monitor-net
-docker volume create prom_data
-docker volume create loki_data
 docker volume create alloy_data
 
 
