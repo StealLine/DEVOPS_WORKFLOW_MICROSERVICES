@@ -1,4 +1,4 @@
-# Still working with documentation
+# I am still working on the documentation and the project. Please note that everything is still in progress.
 
 
 # 🚀 Application Server Setup Guide
