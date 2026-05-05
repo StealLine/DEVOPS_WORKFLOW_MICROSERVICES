@@ -1,0 +1,26 @@
+services:
+  dockhand:
+    image: fnsys/dockhand:latest
+    container_name: dockhand
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - dockhand_data:/app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dockhand.rule=Host(`dockhand.yourdomain`)"
+      - "traefik.http.services.dockhand.loadbalancer.server.port=3000"
+      - "traefik.http.routers.dockhand.tls.certresolver=le"
+      - "traefik.http.routers.dockhand.tls=true"
+      - "traefik.http.routers.dockhand.entrypoints=websecure"
+      - "traefik.docker.network=dockhand"
+    networks:
+      - dockhand
+
+networks:
+  dockhand:
+    external: true
+
+volumes:
+  dockhand_data:
+    external: true

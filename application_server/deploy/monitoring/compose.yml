@@ -1,54 +1,8 @@
 # =============================================================================
-# Monitoring Stack
-# Services: Loki (log aggregation), Prometheus (metrics), Alloy (collection)
-# All services share an external "monitor-net" network and external volumes
-# so data persists across container restarts and stack redeployments.
+# Monitoring
 # =============================================================================
 
 services:
-
-  # ---------------------------------------------------------------------------
-  # Loki — log aggregation backend (Grafana datasource)
-  # Receives logs from Alloy via push and stores them in loki_data volume.
-  # Config is mounted from ./loki-config.yaml.
-  # ---------------------------------------------------------------------------
-  loki:
-    image: grafana/loki:3.6.7
-    volumes:
-      - ./loki-config.yaml:/etc/loki/local-config.yaml
-      - loki_data:/loki
-    command: -config.file=/etc/loki/local-config.yaml
-    restart: unless-stopped
-    networks:
-      - monitor-net
-    labels:
-      org.label-schema.group: "monitoring"
-
-  # ---------------------------------------------------------------------------
-  # Prometheus — metrics storage and query engine (Grafana datasource)
-  # Scrapes targets defined in ./prometheus/prometheus.yml.
-  # Remote-write receiver is enabled so Alloy can push metrics directly.
-  # Retention is set to 200h (~8 days). Listens on 0.0.0.0:9090.
-  # ---------------------------------------------------------------------------
-  prometheus:
-    image: prom/prometheus:v3.10.0
-    restart: unless-stopped
-    volumes:
-      - ./prometheus:/etc/prometheus
-      - prom_data:/prometheus
-    command:
-      - '--web.enable-remote-write-receiver'       # Accept metrics via remote-write (used by Alloy)
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.listen-address=0.0.0.0:9090'
-      - '--storage.tsdb.retention.time=200h'
-      - '--log.level=info'
-      - '--log.format=json'
-      # - '--config.auto-reload-interval=30s'       # Uncomment to hot-reload config
-    networks:
-      - monitor-net
-    labels:
-      org.label-schema.group: "monitoring"
 
   # ---------------------------------------------------------------------------
   # Alloy — Grafana's OpenTelemetry-native collector (replaces Grafana Agent)
@@ -97,10 +51,6 @@ services:
 # Volumes — all external (created outside this stack, persist independently)
 # =============================================================================
 volumes:
-  prom_data:
-    external: true
-  loki_data:
-    external: true
   alloy_data:
     external: true
 

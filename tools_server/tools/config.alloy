@@ -1,0 +1,343 @@
+///////////////////////////////////////////////////////////// GENERAL ////////////////////////////////////////////////
+
+// ---------------------------------------------------------------------------
+// Log destinations
+// ---------------------------------------------------------------------------
+
+// [DISABLED] Self-hosted Loki — uncomment to send logs to a Loki instance.
+// Can be local (same Docker network) or remote (another server).
+// Examples:
+//   url = "http://loki:3100/loki/api/v1/push"          — same Docker network
+//   url = "http://192.168.1.10:3100/loki/api/v1/push"  — another server by IP
+//   url = "http://loki.example.com:3100/loki/api/v1/push" — another server by hostname
+//
+// loki.write "local" {
+//   endpoint {
+//     url = "http://<LOKI_HOST>:3100/loki/api/v1/push"
+//
+//     // Uncomment if your Loki instance requires authentication:
+//     // basic_auth {
+//     //   username = "<USERNAME>"
+//     //   password = "<PASSWORD>"
+//     // }
+//   }
+// }
+
+// [ACTIVE] Grafana Cloud Loki
+loki.write "grafanacloud" {
+  endpoint {
+    url = "https://<GRAFANA_CLOUD_LOKI_URL>/loki/api/v1/push"
+
+    basic_auth {
+      username = "<GRAFANA_CLOUD_LOKI_USERNAME>"
+      password = "<GRAFANA_CLOUD_LOKI_API_KEY>"
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Metrics destinations
+// ---------------------------------------------------------------------------
+
+// [DISABLED] Self-hosted Prometheus — uncomment to send metrics to a Prometheus instance.
+// Can be local (same Docker network) or remote (another server).
+// Examples:
+//   url = "http://prometheus:9090/api/v1/write"           — same Docker network
+//   url = "http://192.168.1.10:9090/api/v1/write"         — another server by IP
+//   url = "http://prometheus.example.com:9090/api/v1/write" — another server by hostname
+//
+// Note: remote-write must be enabled on Prometheus:
+//   --web.enable-remote-write-receiver flag required
+//
+// prometheus.remote_write "local" {
+//   endpoint {
+//     url = "http://<PROMETHEUS_HOST>:9090/api/v1/write"
+//
+//     // Uncomment if your Prometheus instance requires authentication:
+//     // basic_auth {
+//     //   username = "<USERNAME>"
+//     //   password = "<PASSWORD>"
+//     // }
+//   }
+// }
+
+// [ACTIVE] Grafana Cloud Prometheus
+prometheus.remote_write "grafanacloud" {
+  endpoint {
+    url = "https://<GRAFANA_CLOUD_PROMETHEUS_URL>/api/prom/push"
+
+    basic_auth {
+      username = "<GRAFANA_CLOUD_PROMETHEUS_USERNAME>"
+      password = "<GRAFANA_CLOUD_PROMETHEUS_API_KEY>"
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////// GENERAL ////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////// HARDWARE ///////////////////////////////////////////////
+
+// ---------------------------------------------------------------------------
+// Node exporter — host system metrics (CPU, memory, disk, network, etc.)
+// ---------------------------------------------------------------------------
+
+discovery.relabel "integrations_node_exporter" {
+  targets = prometheus.exporter.unix.exporter_node.targets
+
+  rule {
+    target_label = "instance"
+    replacement  = "Tools_Server"
+  }
+
+  rule {
+    target_label = "job"
+    replacement  = "node"
+  }
+}
+
+prometheus.exporter.unix "exporter_node" {
+  disable_collectors = ["ipvs", "btrfs", "infiniband", "xfs", "zfs"]
+  enable_collectors  = ["defaults", "systemd", "processes"]
+
+  procfs_path = "/rootproc"
+  sysfs_path  = "/sys"
+  rootfs_path = "/rootfs"
+
+  filesystem {
+    fs_types_exclude     = "^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|tmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$"
+    mount_points_exclude = "^/(dev|proc|run/credentials/.+|sys|var/lib/docker/.+)($|/)"
+    mount_timeout        = "5s"
+  }
+
+  netclass {
+    ignored_devices = "^(veth.*|cali.*|[a-f0-9]{15})$"
+  }
+
+  netdev {
+    device_exclude = "^(veth.*|cali.*|[a-f0-9]{15})$"
+  }
+}
+
+// Scrape node metrics and fan-out to all active remote_write targets.
+// To also send to self-hosted Prometheus — uncomment "local" block above and add:
+//   prometheus.remote_write.local.receiver,
+prometheus.scrape "node" {
+  scrape_interval = "30s"
+  targets         = discovery.relabel.integrations_node_exporter.output
+  forward_to      = [
+    prometheus.remote_write.grafanacloud.receiver,
+    // prometheus.remote_write.local.receiver,
+  ]
+}
+
+// ---------------------------------------------------------------------------
+// Journal logs — systemd unit logs from the host via /var/log/journal
+// ---------------------------------------------------------------------------
+
+loki.source.journal "node_logs_journal" {
+  max_age       = "24h0m0s"
+  path          = "/var/log/journal"
+  relabel_rules = discovery.relabel.node_logs_journal_relabel.rules
+  forward_to    = [
+    loki.write.grafanacloud.receiver,
+    // loki.write.local.receiver,
+  ]
+}
+
+local.file_match "node_logs" {
+  path_targets = [{
+    __address__ = "localhost",
+    __path__    = "/rootfs/var/log/{syslog,messages,*.log}",
+    instance    = "Tools_Server",
+    job         = "node_logs",
+  }]
+}
+
+discovery.relabel "node_logs_journal_relabel" {
+  targets = []
+
+  rule {
+    target_label = "instance"
+    replacement  = "Tools_Server"
+  }
+
+  // [DISABLED] Uncomment to attach systemd unit name as a label:
+  // rule {
+  //   source_labels = ["__journal__systemd_unit"]
+  //   target_label  = "unit"
+  // }
+
+  // [DISABLED] Uncomment to attach boot ID as a label:
+  // rule {
+  //   source_labels = ["__journal__boot_id"]
+  //   target_label  = "boot_id"
+  // }
+
+  // [DISABLED] Uncomment to attach machine ID as a label:
+  // rule {
+  //   source_labels = ["__journal__machine_id"]
+  //   target_label  = "machine_id"
+  // }
+
+  // [DISABLED] Uncomment to attach transport info as a label:
+  // rule {
+  //   source_labels = ["__journal__transport"]
+  //   target_label  = "transport"
+  // }
+
+  rule {
+    source_labels = ["__journal_priority_keyword"]
+    target_label  = "level"
+  }
+
+  rule {
+    target_label = "job"
+    replacement  = "node_journal"
+  }
+}
+
+loki.source.file "node_logs" {
+  targets    = local.file_match.node_logs.targets
+  forward_to = [loki.process.add_level.receiver]
+}
+
+loki.process "add_level" {
+  forward_to = [
+    loki.write.grafanacloud.receiver,
+    // loki.write.local.receiver,
+  ]
+
+  stage.regex {
+    expression = `(?i)(?P<level>error|warn|warning|info|debug|crit)`
+  }
+
+  stage.template {
+    source   = "level"
+    template = `{{ if .Value }}{{ ToLower .Value }}{{ else }}unknown{{ end }}`
+  }
+
+  stage.labels {
+    values = {
+      level = "",
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////// HARDWARE ///////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////// DOCKER /////////////////////////////////////////////////
+
+// ---------------------------------------------------------------------------
+// Metrics — cAdvisor scrapes container CPU, memory, network, I/O stats
+// ---------------------------------------------------------------------------
+
+prometheus.exporter.cadvisor "docker_cadvisor" {
+  docker_only = true
+}
+
+discovery.relabel "docker_m_relabel" {
+  targets = prometheus.exporter.cadvisor.docker_cadvisor.targets
+
+  rule {
+    target_label = "job"
+    replacement  = "Docker_Metrics"
+  }
+
+  rule {
+    target_label = "instance"
+    replacement  = "Tools_Server"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+
+  // [DISABLED] Uncomment to attach compose service name as a label:
+  // rule {
+  //   source_labels = ["container_label_com_docker_compose_service"]
+  //   target_label  = "service"
+  // }
+}
+
+prometheus.scrape "scraper" {
+  scrape_interval = "30s"
+  targets         = discovery.relabel.docker_m_relabel.output
+  forward_to      = [
+    prometheus.remote_write.grafanacloud.receiver,
+    // prometheus.remote_write.local.receiver,
+  ]
+}
+
+// ---------------------------------------------------------------------------
+// Logs — collect stdout/stderr from all running Docker containers
+// ---------------------------------------------------------------------------
+
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+discovery.relabel "docker" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+
+  // [DISABLED] Uncomment to attach image name as a label:
+  // rule {
+  //   source_labels = ["__meta_docker_container_image"]
+  //   target_label  = "image"
+  // }
+
+  // [DISABLED] Uncomment to attach compose service name as a label:
+  // rule {
+  //   source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+  //   target_label  = "service"
+  // }
+
+  rule {
+    target_label = "instance"
+    replacement  = "Tools_Server"
+  }
+
+  rule {
+    target_label = "job"
+    replacement  = "docker_logs"
+  }
+}
+
+loki.source.docker "default" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.docker.output
+  forward_to = [loki.process.docker_add_level.receiver]
+}
+
+loki.process "docker_add_level" {
+  forward_to = [
+    loki.write.grafanacloud.receiver,
+    // loki.write.local.receiver,
+  ]
+
+  stage.regex {
+    expression = `(?i)(?P<level>error|warn|warning|info|debug|crit|fatal|critical)`
+  }
+
+  stage.template {
+    source   = "level"
+    template = `{{ if .Value }}{{ ToLower .Value }}{{ else }}unknown{{ end }}`
+  }
+
+  stage.labels {
+    values = {
+      level = "",
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////// DOCKER /////////////////////////////////////////////////

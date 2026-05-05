@@ -1,0 +1,141 @@
+ =============================================================================
+# Monitoring Stack
+# Services: Loki (log aggregation), Prometheus (metrics), Alloy (collection)
+# All services share an external "monitor-net" network and external volumes
+# so data persists across container restarts and stack redeployments.
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Loki — log aggregation backend (Grafana datasource)
+  # Receives logs from Alloy via push and stores them in loki_data volume.
+  # Config is mounted from ./loki-config.yaml.
+  # ---------------------------------------------------------------------------
+  loki:
+    image: grafana/loki:3.6.7
+    volumes:
+      - ./loki-config.yaml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+    networks:
+      - monitor-net
+    labels:
+      org.label-schema.group: "monitoring"
+
+  # ---------------------------------------------------------------------------
+  # Prometheus — metrics storage and query engine (Grafana datasource)
+  # Scrapes targets defined in ./prometheus/prometheus.yml.
+  # Remote-write receiver is enabled so Alloy can push metrics directly.
+  # Retention is set to 200h (~8 days). Listens on 0.0.0.0:9090.
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v3.10.0
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prom_data:/prometheus
+    command:
+      - '--web.enable-remote-write-receiver'       # Accept metrics via remote-write (used by Alloy)
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.listen-address=0.0.0.0:9090'
+      - '--storage.tsdb.retention.time=200h'
+      - '--log.level=info'
+      - '--log.format=json'
+      # - '--config.auto-reload-interval=30s'       # Uncomment to hot-reload config
+    networks:
+      - monitor-net
+    labels:
+      org.label-schema.group: "monitoring"
+
+  # ---------------------------------------------------------------------------
+  # Alloy — Grafana's OpenTelemetry-native collector (replaces Grafana Agent)
+  # Collects host metrics, logs, and container telemetry, then forwards to
+  # Prometheus (remote-write) and Loki (push).
+  #
+  # Requires privileged mode + extensive host mounts to access:
+  #   /proc, /sys, /        — host OS metrics (CPU, memory, disk, fs)
+  #   /dev/disk             — disk I/O stats
+  #   /var/lib/docker       — Docker internals
+  #   /var/log/journal      — systemd journal logs
+  #   /run/dbus/...         — D-Bus socket for systemd unit metrics
+  #   /var/run/docker.sock  — Docker API (container discovery & log collection)
+  #   /run/containerd/...   — containerd socket (read-only, container runtime)
+  #   /dev/kmsg             — kernel message buffer
+  #
+  # Config is mounted from ./config.alloy.
+  # host.docker.internal resolves to the host machine IP inside the container.
+  # ---------------------------------------------------------------------------
+  alloy:
+    image: grafana/alloy:v1.14.0
+    privileged: true
+    environment:
+      ALLOY_DEPLOY_MODE: docker
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy
+      - /proc:/rootproc:ro
+      - /sys:/sys:ro
+      - /:/rootfs:ro
+      - /dev/disk/:/dev/disk:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /var/log/journal:/var/log/journal:ro
+      - alloy_data:/var/lib/alloy
+      - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /run/containerd/containerd.sock:/run/containerd/containerd.sock:ro
+    command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # Allows Alloy to reach host services by hostname
+    devices:
+      - /dev/kmsg
+    networks:
+      - monitor-net
+
+
+  grafana:
+    image: grafana/grafana:13.0.1
+    restart: unless-stopped
+
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning 
+      - ./grafana/dashboards:/etc/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+    networks:
+      - monitor-net
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.yourdomain`)"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      - "traefik.http.routers.grafana.tls.certresolver=le"
+      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.docker.network=monitor-net"
+      - "org.label-schema.group: monitoring"
+
+
+# =============================================================================
+# Volumes — all external (created outside this stack, persist independently)
+# =============================================================================
+volumes:
+  prom_data:
+    external: true
+  loki_data:
+    external: true
+  alloy_data:
+    external: true
+
+# =============================================================================
+# Networks — external bridge network shared across stacks
+# =============================================================================
+networks:
+  monitor-net:
+    external: true
+    driver: bridge
