@@ -29,7 +29,7 @@ chmod +x deploy_script.sh
 
 Start the setup:
 
-sudo ./deploy_script.sh  
+./deploy_script.sh  
 
 ---
 
