@@ -10,6 +10,7 @@ This guide explains how to set up the **application server** where your app will
 ## 1. Clone repository
 
 git clone https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES.git
+
 cd DEVOPS_WORKFLOW_MICROSERVICES/application_server  
 
 ---
@@ -35,7 +36,9 @@ sudo ./deploy_script.sh
 ## 4. Configure Traefik (Cloudflare)
 
 Go to Traefik configuration directory:
+
 sudo su
+
 cd /home/deploy/deployVokimi/traefik  
 
 Then set up Cloudflare credentials:
