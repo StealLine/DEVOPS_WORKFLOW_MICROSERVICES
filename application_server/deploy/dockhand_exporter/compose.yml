@@ -13,6 +13,6 @@ services:
 
     environment:
       STACKS_DIR: /opt/hawser-stacks
-      TOKEN: secret
+      TOKEN: secret # you can remove this token or set your own secret via .env file or env variables
 
     restart: unless-stopped
