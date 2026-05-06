@@ -1,0 +1,163 @@
+apiVersion: 1
+groups:
+    - orgId: 1
+      name: Host_Eval
+      folder: Host
+      interval: 5m
+      rules:
+        - uid: bfkv0eijdlgjke
+          title: Host - Memory Low
+          condition: C
+          data:
+            - refId: A
+              queryType: range
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: voki-prom
+              model:
+                datasource:
+                    type: prometheus
+                    uid: voki-prom
+                expr: 100 - (node_memory_MemAvailable_bytes{job="node"} / node_memory_MemTotal_bytes{job="node"} * 100)
+                instant: true
+                interval: 1m
+                intervalMs: 1000
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 90
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: NoData
+          execErrState: Error
+          for: 5m
+          isPaused: false
+          notification_settings:
+            receiver: empty
+        - uid: cfkuzrvj69am8c
+          title: Host - CPU High
+          condition: C
+          data:
+            - refId: A
+              queryType: range
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: voki-prom
+              model:
+                datasource:
+                    type: prometheus
+                    uid: voki-prom
+                expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{job="node", mode="idle"}[5m])) * 100)
+                instant: true
+                interval: 1m
+                intervalMs: 1000
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 85
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: NoData
+          execErrState: Error
+          for: 5m
+          isPaused: false
+          notification_settings:
+            receiver: empty
+        - uid: dfkv0hiw417ggc
+          title: Host - Disk Low
+          condition: C
+          data:
+            - refId: A
+              queryType: range
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: voki-prom
+              model:
+                datasource:
+                    type: prometheus
+                    uid: voki-prom
+                expr: node_filesystem_avail_bytes{job="node", mountpoint="/", fstype!="tmpfs"} / node_filesystem_size_bytes{job="node", mountpoint="/", fstype!="tmpfs"} * 100
+                instant: true
+                interval: 1m
+                intervalMs: 1000
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 10
+                        type: lt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: NoData
+          execErrState: Error
+          for: 5m
+          isPaused: false
+          notification_settings:
+            receiver: empty

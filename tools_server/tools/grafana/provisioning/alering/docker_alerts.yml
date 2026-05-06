@@ -1,0 +1,139 @@
+apiVersion: 1
+groups:
+    - orgId: 1
+      name: dockerEval
+      folder: Docker
+      interval: 5m
+      rules:
+        - uid: efkuybnwxumtcd
+          title: Docker - Container Memory High
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: voki-prom
+              model:
+                datasource:
+                    type: prometheus
+                    uid: voki-prom
+                editorMode: code
+                expr: sum by(name, instance) (container_memory_usage_bytes{job="Docker_Metrics", image!="", name!=""}) / on(instance) group_left() sum by(instance) (machine_memory_bytes{job="Docker_Metrics"}) * 100
+                instant: false
+                interval: 1m
+                intervalMs: 1000
+                maxDataPoints: 43200
+                range: true
+                refId: A
+            - refId: reducer
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 0
+                            - 0
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params: []
+                      reducer:
+                        params: []
+                        type: avg
+                      type: query
+                datasource:
+                    name: Expression
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                reducer: last
+                refId: reducer
+                type: reduce
+            - refId: C
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 80
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: reducer
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: NoData
+          execErrState: Error
+          for: 5m
+          isPaused: false
+          notification_settings:
+            receiver: empty
+        - uid: dfkuzef3k622oa
+          title: Docker - Container CPU High
+          condition: C
+          data:
+            - refId: A
+              queryType: range
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: voki-prom
+              model:
+                datasource:
+                    type: prometheus
+                    uid: voki-prom
+                expr: sum by(name, instance) (rate(container_cpu_usage_seconds_total{job="Docker_Metrics", image!="", name!=""}[5m])) * 100 / on(instance) group_left() sum by(instance) (machine_cpu_cores{job="Docker_Metrics"})
+                instant: true
+                interval: 1m
+                intervalMs: 1000
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 80
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: NoData
+          execErrState: Error
+          for: 5m
+          isPaused: false
+          notification_settings:
+            receiver: empty

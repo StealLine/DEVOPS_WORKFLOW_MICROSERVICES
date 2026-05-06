@@ -17,11 +17,11 @@ services:
       - sonarqube_data:/opt/sonarqube/data
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.dockhand.rule=Host(`sonarqube.yourdomain`)"
-      - "traefik.http.services.dockhand.loadbalancer.server.port=9000"
-      - "traefik.http.routers.dockhand.tls.certresolver=le"
-      - "traefik.http.routers.dockhand.tls=true"
-      - "traefik.http.routers.dockhand.entrypoints=websecure"
+      - "traefik.http.routers.sonar.rule=Host(`sonarqube.yourdomain`)"
+      - "traefik.http.services.sonar.loadbalancer.server.port=9000"
+      - "traefik.http.routers.sonar.tls.certresolver=le"
+      - "traefik.http.routers.sonar.tls=true"
+      - "traefik.http.routers.sonar.entrypoints=websecure"
       - "traefik.docker.network=sonarnet"
 
 

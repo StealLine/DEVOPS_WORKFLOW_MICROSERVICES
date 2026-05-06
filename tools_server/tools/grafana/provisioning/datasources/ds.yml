@@ -1,6 +1,7 @@
 apiVersion: 1
 datasources:
-  - name: Prometheus
+  - name: grafana-voki-prom
+    uid: voki-prom 
     type: prometheus
     access: proxy
     url: http://prometheus:9090
@@ -8,7 +9,8 @@ datasources:
     jsonData:
       timeInterval: "30s" 
 
-  - name: Loki
+  - name: grafana-voki-loki
+    uid: voki-loki
     type: loki
     access: proxy
     url: http://loki:3100
