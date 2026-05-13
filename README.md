@@ -412,7 +412,7 @@ Your repo must have this variables
 
 ### SonarQube (Optional)
  
-If you have set up a SonarQube instance as part of the [Tools Server Setup](https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES/tree/main#tools-server-setup), the following variables SONAR_HOST_URL  and SONAR_TOKEN will be provided to you by sonarqube
+If you have set up a SonarQube instance as part of the [Tools Server Setup](https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES/tree/main#tools-server-setup-optional), the following variables SONAR_HOST_URL  and SONAR_TOKEN will be provided to you by sonarqube
 
 
 
