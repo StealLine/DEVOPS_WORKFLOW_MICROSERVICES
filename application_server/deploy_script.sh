@@ -36,6 +36,7 @@ docker network create preview_deploy
 docker network create production_deploy
 docker network create monitor-net
 docker volume create alloy_data
-
+docker volume create postgres_data
+docker volume create rabbitmq_data
 
 echo "✅ Done."
