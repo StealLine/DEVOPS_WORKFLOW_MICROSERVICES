@@ -32,11 +32,11 @@ sudo cp -r "$DEPLOY_DIR"/. /home/deploy/
 echo "🔑 Setting ownership..."
 sudo chown -R deploy:deploy /home/deploy
 
-docker network create preview_deploy
-docker network create production_deploy
-docker network create monitor-net
-docker volume create alloy_data
-docker volume create postgres_data
-docker volume create rabbitmq_data
+sudo docker network create preview_deploy
+sudo docker network create production_deploy
+sudo docker network create monitor-net
+sudo docker volume create alloy_data
+sudo docker volume create postgres_data
+sudo docker volume create rabbitmq_data
 
 echo "✅ Done."
