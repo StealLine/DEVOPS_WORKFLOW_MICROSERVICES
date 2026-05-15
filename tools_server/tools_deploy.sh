@@ -38,5 +38,8 @@ sudo docker volume create prom_data    || true
 sudo docker volume create loki_data    || true
 sudo docker volume create alloy_data   || true
 sudo docker volume create grafana_data || true
+sudo docker volume create dockhand_data || true
+sudo docker volume create postgresql || true
+sudo docker volume create sonarqube_data || true
 
 echo "✅ Done."
