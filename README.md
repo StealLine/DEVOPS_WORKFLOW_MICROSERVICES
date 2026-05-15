@@ -323,7 +323,8 @@ docker compose up -d
 
 Don't forget to configure Cloudflare according to your needs and set the correct subdomains for proper routing.
 
-![Cloudflare DNS example](https://github.com/user-attachments/assets/22afbb4f-9a42-4d03-b795-b911751af0ec)
+<img width="1146" height="256" alt="image" src="https://github.com/user-attachments/assets/887079fb-7558-48ee-8907-a3593fe85079" />
+
 
 > **Note:** Self-hosted Grafana and SonarQube are not enabled by default. The repository is self-explanatory enough that you should be able to figure it out. Keep in mind that Grafana, SonarQube, Prometheus, and Loki are resource-intensive — make sure your server meets the necessary hardware requirements.
 
