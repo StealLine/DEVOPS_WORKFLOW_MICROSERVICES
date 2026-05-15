@@ -430,6 +430,10 @@ Your repo must have this variables
 If you have set up a SonarQube instance as part of the [Tools Server Setup](https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES/tree/main#tools-server-setup-optional), the following variables SONAR_HOST_URL  and SONAR_TOKEN will be provided to you by sonarqube
 
 
+## Related repositories 
+[CI/CD configuration](https://github.com/StealLine/CI_CD_Configuration_Vokimi)
+
+[Vokimi application](https://github.com/StealLine/Voki_App_Project)
 
 
 
