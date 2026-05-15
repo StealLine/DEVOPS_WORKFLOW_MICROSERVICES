@@ -163,7 +163,7 @@ cd /home/deploy/monitoring
 docker compose up -d
 ```
 
-## 8. Start the Dockhand exporter
+## 8. Start the Dockhand exporter (optional)
 
 ```bash
 nano /home/deploy/dockhand_exporter/compose.yml
@@ -233,6 +233,20 @@ In the following files, replace `yourdomain` with your actual domain:
 - "traefik.http.routers.dockhand.rule=Host(`dockhand.yourdomain.com`)"
 ```
 
+Also go to `/home/tools/compose.yml` and open required ports on your private IP for Prometheus and Loki:
+
+**For Prometheus:**
+```yaml
+ports:
+  - <your_tools_private_ip>:9090:9090
+```
+
+**For Loki:**
+```yaml
+ports:
+  - <your_tools_private_ip>:3100:3100
+```
+    
 ## 4. Configure Alloy — where to send metrics and logs
 
 ```bash
@@ -241,7 +255,7 @@ nano tools/config.alloy
 
 Same choice as on the app server — Grafana Cloud, self-hosted, or both.
 
-To send to the **local** Prometheus and Loki running on this same server, uncomment the `local` blocks:
+To send to the **local** Prometheus and Loki running on this same server, uncomment the `local` blocks (or simply change them with your private ip of Tools_Server):
 
 ```alloy
 loki.write "local" {
@@ -274,15 +288,8 @@ This will:
 - Create Docker networks: `monitor-net`, `dockhand`, `sonarnet`
 - Create Docker volumes: `prom_data`, `loki_data`, `alloy_data`, `grafana_data`
 
-## 6. Start Traefik
 
-```bash
-sudo su - tools
-cd /home/tools/traefik
-docker compose up -d
-```
-
-## 7. Start the main monitoring stack
+## 6. Start the main monitoring stack
 
 ```bash
 cd /home/tools
@@ -291,20 +298,26 @@ docker compose up -d
 
 This starts: **Grafana**, **Prometheus**, **Loki**, **Alloy**.
 
-## 8. Start SonarQube (optional)
+## 7. Start SonarQube (optional)
 
 ```bash
 cd /home/tools/sonarqube
 docker compose up -d
 ```
 
-## 9. Start Dockhand (optional)
+## 8. Start Dockhand (optional)
 
 ```bash
 cd /home/tools/dockhand
 docker compose up -d
 ```
+## 9. Start Traefik
 
+```bash
+sudo su - tools
+cd /home/tools/traefik
+docker compose up -d
+```
 ---
 
 Don't forget to configure Cloudflare according to your needs and set the correct subdomains for proper routing.
@@ -395,7 +408,7 @@ Your domain must be registered in Resend. If you use Cloudflare DNS, Resend will
  
  
 
-PRIVATE_K - Your **private SSH key**, Base64-encoded. The corresponding **public key** must be added to the server as described in the [infrastructure setup guide](https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES/tree/main#2-add-your-cicd-ssh-public-key).
+PRIVATE_K - Your **private SSH key**, Base64-encoded (base64 -w 0 YourKey). The corresponding **public key** must be added to the server as described in the [infrastructure setup guide](https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES/tree/main#2-add-your-cicd-ssh-public-key).
 
 PROJECT_REF - The GitLab project reference (path or ID) of the repository where your CI/CD configuration is stored.
 
