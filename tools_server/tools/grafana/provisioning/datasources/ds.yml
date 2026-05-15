@@ -9,7 +9,7 @@ datasources:
     jsonData:
       timeInterval: "30s" 
 
-  - name: grafana-voki-loki
+  - name: grafana-voki-logs
     uid: voki-loki
     type: loki
     access: proxy
