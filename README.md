@@ -200,6 +200,7 @@ docker compose up -d
 
 ```bash
 git clone https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES.git
+rm -rf DEVOPS_WORKFLOW_MICROSERVICES/application_server
 cd DEVOPS_WORKFLOW_MICROSERVICES/tools_server
 ```
 
