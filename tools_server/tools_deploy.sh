@@ -29,14 +29,14 @@ sudo chown -R tools:tools /home/tools
 sudo chmod 600 /home/tools/traefik/letsencrypt/acme.json
  
 echo "🌐 Creating Docker networks..."
-docker network create monitor-net || true
-docker network create dockhand    || true
-docker network create sonarnet    || true
- 
+sudo docker network create monitor-net || true
+sudo docker network create dockhand    || true
+sudo docker network create sonarnet    || true
+
 echo "💾 Creating Docker volumes..."
-docker volume create prom_data    || true
-docker volume create loki_data    || true
-docker volume create alloy_data   || true
-docker volume create grafana_data || true
- 
+sudo docker volume create prom_data    || true
+sudo docker volume create loki_data    || true
+sudo docker volume create alloy_data   || true
+sudo docker volume create grafana_data || true
+
 echo "✅ Done."

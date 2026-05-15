@@ -14,6 +14,8 @@ services:
   # ---------------------------------------------------------------------------
   loki:
     image: grafana/loki:3.6.7
+    ports:
+      - <your tools private ip address>:3100:3100
     volumes:
       - ./loki-config.yml:/etc/loki/local-config.yaml
       - loki_data:/loki
@@ -33,6 +35,8 @@ services:
   prometheus:
     image: prom/prometheus:v3.10.0
     restart: unless-stopped
+    ports:
+      - <your tools private ip address>:9090:9090
     volumes:
       - ./prometheus:/etc/prometheus
       - prom_data:/prometheus
