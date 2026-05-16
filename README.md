@@ -77,6 +77,15 @@ Alloy on the **tools server** monitors the tools server itself the same way and 
 
 # Application Server Setup (required)
 
+---
+### Setup Cloudflare according to your needs and set the correct subdomains for proper routing.
+
+<img width="1146" height="256" alt="image" src="https://github.com/user-attachments/assets/887079fb-7558-48ee-8907-a3593fe85079" />
+
+*Last one is root domain*
+
+---
+
 ## 1. Clone the repository
 
 ```bash
@@ -145,31 +154,24 @@ This will:
 - Create the `deploy` system user
 - Copy all deploy files to `/home/deploy/`
 - Set correct file ownership
-- Create Docker networks: `preview_deploy`, `production_deploy`, `monitor-net`
-- Create Docker volume: `alloy_data`
+- Create Docker networks
+- Create Docker volumes
 
-## 6. Start Traefik
+## 6. Start monitoring (optional if you dont need metrics/logs)
 
 ```bash
 sudo su - deploy
-cd /home/deploy/deployVokimi/traefik
-docker compose up -d
-```
-
-## 7. Start monitoring (Alloy)
-
-```bash
 cd /home/deploy/monitoring
 docker compose up -d
 ```
 
-## 8. Start the Dockhand exporter (optional)
+## 7. Start the Dockhand exporter (optional)
 
 ```bash
 nano /home/deploy/dockhand_exporter/compose.yml
 ```
 
-Replace the placeholder with your VPS private IP (the one that shares a VPC with the Tools Server):
+Replace the placeholder with your VPS private IP (the one that shares a VPC with the [Tools Server](https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES#tools-server-setup-optional)):
 
 ```yaml
 ports:
@@ -190,7 +192,15 @@ cd /home/deploy/dockhand_exporter
 docker compose up -d
 ```
 
-> **Note:** To send logs to a self-hosted Grafana instance, you need to expose the remote write endpoints for Prometheus and Loki on the Tools Server. Opening ports on a public IP is dangerous and not recommended — use a private IP instead. You can optionally add SSL certificates and basic auth so that even private network connections are secure.
+## 8. Start Traefik
+
+```bash
+cd /home/deploy/deployVokimi/traefik
+docker compose up -d
+```
+
+
+> **Note:** To send logs to a self-hosted Grafana instance, you need to expose the remote write endpoints for Prometheus and Loki on the Tools Server. Opening ports on a public IP is dangerous and not recommended — use a private IP instead. You can optionally add SSL certificates and basic auth so that even private network connections are secure. Your servers must be in same VPC to see each other!
 
 ---
 
@@ -284,29 +294,30 @@ chmod +x tools_deploy.sh
 This will:
 - Install Docker and Docker Compose
 - Create the `tools` system user
-- Set file permissions (755 for dirs, 644 for files, 600 for `acme.json`)
+- Set file permissions 
 - Copy all tool files to `/home/tools/`
-- Create Docker networks: `monitor-net`, `dockhand`, `sonarnet`
-- Create Docker volumes: `prom_data`, `loki_data`, `alloy_data`, `grafana_data`
+- Create Docker networks
+- Create Docker volumes
 
 
 ## 6. Start the main monitoring stack
 
 ```bash
+sudo su - tools
 cd /home/tools
 docker compose up -d
 ```
 
 This starts: **Grafana**, **Prometheus**, **Loki**, **Alloy**.
 
-## 7. Start SonarQube (optional)
+## 7. Start SonarQube (setup it manually by visiting sonarqube.yourdomain.com)
 
 ```bash
 cd /home/tools/sonarqube
 docker compose up -d
 ```
 
-## 8. Start Dockhand (optional)
+## 8. Start Dockhand (setup it manually by visiting dockhand.yourdomain.com)
 
 ```bash
 cd /home/tools/dockhand
@@ -315,16 +326,9 @@ docker compose up -d
 ## 9. Start Traefik
 
 ```bash
-sudo su - tools
 cd /home/tools/traefik
 docker compose up -d
 ```
----
-
-Don't forget to configure Cloudflare according to your needs and set the correct subdomains for proper routing.
-
-<img width="1146" height="256" alt="image" src="https://github.com/user-attachments/assets/887079fb-7558-48ee-8907-a3593fe85079" />
-
 
 > **Note:** Self-hosted Grafana and SonarQube are not enabled by default. The repository is self-explanatory enough that you should be able to figure it out. Keep in mind that Grafana, SonarQube, Prometheus, and Loki are resource-intensive — make sure your server meets the necessary hardware requirements.
 
@@ -354,7 +358,8 @@ cd Voki_App_Project
 git remote set-url origin <your-gitlab-repo-url>
 git push -u origin main
 ```
-You can give commit message [ci skip] name to skip any pipelines for this commit
+**If it is not allowing you to push to main directly, then unprotect main branch.**
+**If git push -u origin main not working for you add --force option**
 
 ---
  
@@ -372,7 +377,6 @@ cd CI_CD_Configuration_Vokimi
 git remote set-url origin <your-gitlab-cicd-repo-url>
 git push -u origin main
 ```
-You can give commit message [ci skip] name to skip any pipelines for this commit
  
 After this step, your GitLab group should contain two repositories — the application repo and the CI/CD configuration repo.
 
@@ -392,7 +396,7 @@ Add the following variables. Unless you have a specific reason to restrict them,
  
 | Variable | Value / Description |
 |---|---|
-| `BASE_DIR_PATH` | `/home/deploy` — unless you modified the [application server](https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES/tree/main#application-server-setup) script|
+| `BASE_DIR_PATH` | `/home/deploy/deployVokimi` — unless you modified the [application server](https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES/tree/main#application-server-setup) script|
 | `DEPLOY_HOST` | Public IP address of your server |
 | `DEPLOY_USER` | `deploy` — unless you modified the [application server](https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES/tree/main#application-server-setup) script |
  
@@ -410,9 +414,9 @@ Your domain must be registered in Resend. If you use Cloudflare DNS, Resend will
  
  
 
-PRIVATE_K - Your **private SSH key**, Base64-encoded (base64 -w 0 YourKey). The corresponding **public key** must be added to the server as described in the [infrastructure setup guide](https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES/tree/main#2-add-your-cicd-ssh-public-key).
+PRIVATE_K - Your **private SSH key**, Base64-encoded (base64 -w 0 <YourKey>). The corresponding **public key** must be added to the server as described in the [infrastructure setup guide](https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES/tree/main#2-add-your-cicd-ssh-public-key).
 
-PROJECT_REF - The GitLab project reference (path or ID) of the repository where your CI/CD configuration is stored.
+PROJECT_REF - The GitLab project reference path of the repository where your CI/CD configuration is stored.
 
 JWT variables is just base64 encoded jwt keys, you can google how to generate them
  
@@ -460,43 +464,77 @@ The bucket layout should look like this:
 
 ---
 
-## CI/CD Pipeline — First-Time Setup
+# CI/CD Pipeline — First-Time Setup
 
-### Step 1 — Enable display variables
+## Step 1 — Enable Display Variables
 
-Make sure **display variables** is enabled in the pipeline settings:
+Make sure **Display pipeline variables** is enabled in the pipeline settings:
 
 <img width="1260" height="285" alt="image" src="https://github.com/user-attachments/assets/ded0f6fa-e486-43ce-a838-559ff3a46d93" />
 
 ---
 
-### Step 2 — Initialize the .NET Docker image
+## Step 2 — Initialize the .NET Docker Image
 
-Before running any pipeline, you need to pre-pull the .NET SDK image by doing a **manual run from `main`**:
+Before running the pipeline for the first time, you need to pre-pull the .NET SDK image by triggering a **manual pipeline run from the `main` branch**.
+
+### Steps
 
 1. Open the pipeline manually
 2. Set the `DOTNET` variable to:
-   ```
-   mcr.microsoft.com/dotnet/sdk:9.0-alpine
-   ```
-3. Click **Run** — only a **single job** should appear
+
+```text
+mcr.microsoft.com/dotnet/sdk:9.0-alpine
+```
+
+3. Click **Run pipeline**
+
+At this stage, only **one initialization job** should appear.
 
 <img width="760" height="573" alt="image" src="https://github.com/user-attachments/assets/2c105485-342e-44a5-a80e-ceb8900e6b88" />
 
 ---
 
-Once the initialization run completes, you're all set — you can push changes, open merge requests, and let the pipeline handle the rest automatically.
+Once the initialization run completes, the setup is finished.
 
+You can now:
 
-### SonarQube (Optional)
- 
-If you have set up a SonarQube instance as part of the [Tools Server Setup](https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES/tree/main#tools-server-setup-optional), the following variables SONAR_HOST_URL  and SONAR_TOKEN will be provided to you by sonarqube
+* Push changes normally
+* Open merge requests
+* Let the CI/CD pipeline handle builds, tests, deployments, and preview environments automatically
 
+---
 
-## Related repositories 
-[CI/CD configuration](https://github.com/StealLine/CI_CD_Configuration_Vokimi)
+# SonarQube
 
-[Vokimi application](https://github.com/StealLine/Voki_App_Project)
+If you configured a SonarQube instance during the [Tools Server Setup](https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES/tree/main#tools-server-setup-optional), you will receive the following variables from SonarQube:
 
+* `SONAR_HOST_URL`
+* `SONAR_TOKEN`
 
+These variables are required for SonarQube analysis jobs.
 
+---
+
+# Backup Configuration
+
+For correct backup behavior, you may need to set the `S3_REGION` environment variable or adjust commands inside containers related to backups.
+
+Backup image repository:
+
+* [postgres-backup-s3 repository](https://github.com/eeshugerman/postgres-backup-s3?utm_source=chatgpt.com)
+
+---
+
+# Trivy Scanning
+
+If you want the Trivy security scan job to run automatically, you can create a **scheduled pipeline** depending on your preferred scanning frequency.
+
+---
+
+# Related Repositories
+
+* [CI/CD Configuration Repository](https://github.com/StealLine/CI_CD_Configuration_Vokimi?utm_source=chatgpt.com)
+* [Vokimi Application Repository](https://github.com/StealLine/Voki_App_Project?utm_source=chatgpt.com)
+
+**Thanks for reading!**
