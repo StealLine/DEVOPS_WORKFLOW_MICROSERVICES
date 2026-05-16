@@ -425,6 +425,69 @@ Your repo must have this variables
 <img width="1207" height="698" alt="image" src="https://github.com/user-attachments/assets/b1d7c0a9-39ca-4672-a5ff-5d7891987dc0" />
 <img width="1210" height="809" alt="image" src="https://github.com/user-attachments/assets/5a3c8917-ed0b-40d9-8d27-17ea0f181543" />
 
+## S3 Bucket Configuration
+
+The application requires an S3 bucket named **`vokimi-storage`** with the following structure:
+
+```
+vokimi-storage/
+├── common/
+│   ├── default-user-profile-pic.webp
+│   └── default-voki-cover.webp
+└── preset-profile-pics/
+    ├── basic-black.webp
+    ├── pets-marsita.webp
+    ├── pets-ya-cat.webp
+    ├── pets-zara.webp
+    ├── pets-monika.webp
+    ├── boykisser-1.webp
+    ├── boykisser-2.webp
+    ├── boykisser-3.webp
+    ├── boykisser-4.webp
+    ├── dasha-1.webp
+    ├── dasha-2.webp
+    ├── dasha-3.webp
+    └── dasha-4.webp
+```
+
+> ⚠️ All files must be in `.webp` format. This structure is **required** for the application to work correctly.
+
+The bucket layout should look like this:
+
+<img width="674" height="622" alt="image" src="https://github.com/user-attachments/assets/6ec29025-00bc-4fdb-bfe7-f70e4c43e526" />
+
+<img width="653" height="151" alt="image" src="https://github.com/user-attachments/assets/cec2fe07-db0f-4b83-be3c-fb09ae31b6e9" />
+
+---
+
+## CI/CD Pipeline — First-Time Setup
+
+### Step 1 — Enable display variables
+
+Make sure **display variables** is enabled in the pipeline settings:
+
+<img width="1260" height="285" alt="image" src="https://github.com/user-attachments/assets/ded0f6fa-e486-43ce-a838-559ff3a46d93" />
+
+---
+
+### Step 2 — Initialize the .NET Docker image
+
+Before running any pipeline, you need to pre-pull the .NET SDK image by doing a **manual run from `main`**:
+
+1. Open the pipeline manually
+2. Set the `DOTNET` variable to:
+   ```
+   mcr.microsoft.com/dotnet/sdk:9.0-alpine
+   ```
+3. Click **Run** — only a **single job** should appear
+
+<img width="760" height="573" alt="image" src="https://github.com/user-attachments/assets/2c105485-342e-44a5-a80e-ceb8900e6b88" />
+
+---
+
+Once the initialization run completes, you're all set — you can push changes, open merge requests, and let the pipeline handle the rest automatically.
+
+
 ### SonarQube (Optional)
  
 If you have set up a SonarQube instance as part of the [Tools Server Setup](https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES/tree/main#tools-server-setup-optional), the following variables SONAR_HOST_URL  and SONAR_TOKEN will be provided to you by sonarqube
