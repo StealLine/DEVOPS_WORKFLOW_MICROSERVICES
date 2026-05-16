@@ -35,6 +35,7 @@ sudo chown -R deploy:deploy /home/deploy
 sudo docker network create preview_deploy
 sudo docker network create production_deploy
 sudo docker network create monitor-net
+sudo docker network create main
 sudo docker volume create alloy_data
 sudo docker volume create postgres_data
 sudo docker volume create rabbitmq_data
