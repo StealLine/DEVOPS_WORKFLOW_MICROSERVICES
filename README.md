@@ -1,5 +1,3 @@
-> ⚠️ **Work in progress** — documentation and project are still being developed.
-
 # DEVOPS_WORKFLOW_MICROSERVICES
 *This devops workflow was built for the [Vokimi](https://github.com/StealLine/Voki_App_Project) application*
 ---
@@ -156,11 +154,14 @@ This will:
 - Set correct file ownership
 - Create Docker networks
 - Create Docker volumes
+  
+```bash
+Enter sudo su - deploy
+```
 
 ## 6. Start monitoring (optional if you dont need metrics/logs)
 
 ```bash
-sudo su - deploy
 cd /home/deploy/monitoring
 docker compose up -d
 ```
@@ -396,9 +397,9 @@ Add the following variables. Unless you have a specific reason to restrict them,
  
 | Variable | Value / Description |
 |---|---|
-| `BASE_DIR_PATH` | `/home/deploy/deployVokimi` — unless you modified the [application server](https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES/tree/main#application-server-setup) script|
+| `BASE_DIR_PATH` | `/home/deploy/deployVokimi` — unless you modified the [application server](https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES/tree/main#application-server-setup-required) script|
 | `DEPLOY_HOST` | Public IP address of your server |
-| `DEPLOY_USER` | `deploy` — unless you modified the [application server](https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES/tree/main#application-server-setup) script |
+| `DEPLOY_USER` | `deploy` — unless you modified the [application server](https://github.com/StealLine/DEVOPS_WORKFLOW_MICROSERVICES/tree/main#application-server-setup-required) script |
  
 ### Email (SMTP)
  
@@ -421,7 +422,7 @@ PROJECT_REF - The GitLab project reference path of the repository where your CI/
 JWT variables is just base64 encoded jwt keys, you can google how to generate them
  
  
-The remaining variables are self-explanatory — refer to the repository README if you are unsure about any of them.
+The remaining variables are self-explanatory.
  
 ---
 Your repo must have this variables
